@@ -1,0 +1,140 @@
+<html>
+<head>
+    <title>Masonry test</title>
+    
+    <style type="text/css">
+
+    #container {
+        position: relative;
+        width: 100px;
+        padding: 0px;
+        background-color: gray;
+    }
+
+    #container li {
+        list-style-type: none;
+        position: absolute;
+        padding: 0px;
+        margin: 0px;
+        border: 1px solid lightgrey;
+    }
+
+    .w1h1 {
+        background-color: red;
+        width: 18px;
+        height: 18px;
+    }
+    .w2h2 {
+        background-color: green;
+        width: 38px;
+        height: 38px;
+    }
+    .w2h4 {
+        background-color: blue;
+        width: 38px;
+        height: 78px;
+    }
+    .w3h1 {
+        background-color: orange;
+        width: 58px;
+        height: 18px;
+    }
+
+    </style>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <script>
+        function dim2bitmask(c, w, h) {
+            var result = 0,
+                i, j;
+            for(i=0; i<h; i++) {
+                result<<=c-w;
+                for(j=0; j<w; j++) {
+                    result<<=1;
+                    result|=1;
+                }
+            }
+            return result;
+        }
+
+        function randim() {
+            var dimensions = [
+                    [1, 1],
+                    // [3, 1],
+                    [1, 1],
+                    [1, 1],
+                    [1, 1],
+                    [1, 1],
+                    [2, 2],
+                    [2, 2],
+                    // [2, 4]
+                ],
+                rnd = parseInt((Math.random()*10) % dimensions.length);
+            return dimensions[rnd];
+        }
+
+        function freePos(g, c, w, h) {
+            var i = 0,
+                b = dim2bitmask(c, w, h),
+                m;
+
+            for(;;) {
+                m = i % c;
+                if(m+w>c || b&g){
+                    i++;
+                    b<<=1;
+                } else {
+                    g|=b;
+                    break;
+                }
+            }
+            return i;
+        }
+        
+
+        $(function(){
+            var columns = 5,
+                grid = 0,
+                plus = 0;
+
+                var rnd, w, h, pos;
+            for(x=0; x<50; x++) {
+                rnd = randim();
+                w = rnd[0];
+                h = rnd[1];
+                pos = freePos(grid, columns, w, h);
+                d = dim2bitmask(columns, w, h)<<pos;
+                grid|=d;
+
+                pos += plus;
+
+                var li = $('<li>')
+                    .addClass(['w', w, 'h', h].join(''))
+                    .html(x)
+                    .css({
+                        top: parseInt(pos / columns) * 20,
+                        left: (pos % columns) * 20,
+                    });
+                li.appendTo($('#container'));
+                console.log(x, pos);
+
+                // var m = 20 - (20 % columns);
+                // if(grid>(1<<m)) {
+                //     grid>>>=m;
+                //     plus+=m;
+                // }
+            }
+
+            // console.log(freePos(grid, columns, 4, 1));
+            // console.log(dimensions2bitmask(columns, 1, 1));
+            // console.log(dimensions2bitmask(columns, 2, 2));
+            // console.log(dimensions2bitmask(columns, 2, 4));
+        });
+    </script>
+</head>
+<body>
+    <ul id="container">
+
+    </ul>
+</body>
+</html>
