@@ -44,14 +44,63 @@
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
     <script>
+        function int2bits(integer) {
+            var bits = [];
+            while(integer) {
+                bits.push(integer % 2);
+                integer = parseInt(integer/2, 10);
+            }
+            return bits;
+        }
+
+        function BinInt(initial) {            
+            this.bits = initial.concat();
+        }
+
+        BinInt.prototype.lshift = function(positions) {
+            var result = new BinInt(this.bits);
+            for(var i=0; i<positions; i++) result.bits.unshift(0);
+            return result;
+        }
+
+        BinInt.prototype.or = function(rhand) {
+            if(this.bits.indexOf(1)===-1) {
+                return new BinInt(rhand);
+            }
+            
+            var result = new BinInt([]),
+                max = Math.max(this.bits.length, rhand.length);
+
+            for(var i=0; i<max; i++) {
+                result.bits[i] = (this.bits[i] || rhand[i]) && 1 || 0;
+            }
+            return result;
+        }
+
+        BinInt.prototype.and = function(rhand) {
+            var result = new BinInt(this.bits),
+                max = Math.max(this.bits.length, rhand.length);
+
+            for(var i=0; i<max; i++) {
+                result.bits[i] = (this.bits[i] && rhand[i]) && 1 || 0;
+            }
+            return result;
+        }
+
+        BinInt.prototype.toInt = function() {
+            var result = this.bits.concat();
+            result.reverse();
+            return parseInt(result.join(''), 2) || 0;
+        }
+
         function dim2bitmask(c, w, h) {
-            var result = 0,
+            var result = new BinInt([0]),
                 i, j;
             for(i=0; i<h; i++) {
-                result<<=c-w;
+                result = result.lshift(c-w);
                 for(j=0; j<w; j++) {
-                    result<<=1;
-                    result|=1;
+                    result = result.lshift(1);
+                    result.bits[0] = 1;
                 }
             }
             return result;
@@ -60,31 +109,31 @@
         function randim() {
             var dimensions = [
                     [1, 1],
-                    // [3, 1],
+                    [3, 1],
                     [1, 1],
                     [1, 1],
                     [1, 1],
                     [1, 1],
                     [2, 2],
                     [2, 2],
-                    // [2, 4]
+                    [2, 4]
                 ],
-                rnd = parseInt((Math.random()*10) % dimensions.length);
+                rnd = parseInt((Math.random()*10) % dimensions.length, 10);
             return dimensions[rnd];
         }
 
-        function freePos(g, c, w, h) {
-            var i = 0,
+        function freePos(g, c, w, h, i) {
+            var i = i || 0,
                 b = dim2bitmask(c, w, h),
                 m;
 
             for(;;) {
                 m = i % c;
-                if(m+w>c || b&g){
+                if(m+w>c || b.and(g.bits).bits.indexOf(1)!==-1){
                     i++;
-                    b<<=1;
+                    b = b.lshift(1);
                 } else {
-                    g|=b;
+                    g = g.or(b.bits);
                     break;
                 }
             }
@@ -94,41 +143,30 @@
 
         $(function(){
             var columns = 5,
-                grid = 0,
-                plus = 0;
+                grid = new BinInt([0]),
+                elements = [];
 
                 var rnd, w, h, pos;
-            for(x=0; x<50; x++) {
+
+            for(x=0; x<300; x++) {
                 rnd = randim();
                 w = rnd[0];
                 h = rnd[1];
                 pos = freePos(grid, columns, w, h);
-                d = dim2bitmask(columns, w, h)<<pos;
-                grid|=d;
-
-                pos += plus;
+                d = dim2bitmask(columns, w, h).lshift(pos);
+                grid = grid.or(d.bits);
 
                 var li = $('<li>')
                     .addClass(['w', w, 'h', h].join(''))
                     .html(x)
                     .css({
-                        top: parseInt(pos / columns) * 20,
+                        top: parseInt(pos / columns, 10) * 20,
                         left: (pos % columns) * 20,
                     });
-                li.appendTo($('#container'));
-                console.log(x, pos);
-
-                // var m = 20 - (20 % columns);
-                // if(grid>(1<<m)) {
-                //     grid>>>=m;
-                //     plus+=m;
-                // }
+                elements.push(li);
             }
-
-            // console.log(freePos(grid, columns, 4, 1));
-            // console.log(dimensions2bitmask(columns, 1, 1));
-            // console.log(dimensions2bitmask(columns, 2, 2));
-            // console.log(dimensions2bitmask(columns, 2, 4));
+            
+            $('#container').append(elements);
         });
     </script>
 </head>
